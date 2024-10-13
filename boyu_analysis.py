@@ -7,13 +7,14 @@ from talib import abstract
 import os
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import time
 
  
 
 ### input ##########
 
-stocks = ['^GSPC','AAPL','TSLA']
-start = '2023-01-01'
+stocks = ['^GSPC','AAPL','^SOX','TSLA']
+start = '2022-01-01'
 end = '2024-01-01'
 
 ####################
@@ -21,25 +22,26 @@ end = '2024-01-01'
 # top_10_stock = ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'BRK-B', 'LLY', 'AVGO', 'TSLA']
 #index = ['^GSPC', '^IXIC', '^DJI', '^SOX']
 
-
+total_start_time = time.time()
 if not os.path.exists('images'):
         os.makedirs('images')
 workbook = xlsxwriter.Workbook('stock_data.xlsx')
+pre = datetime.strptime(start, '%Y-%m-%d') - relativedelta(months=2)
+pre = pre.strftime('%Y-%m-%d')
 
 for stock in stocks:
     ### setting time fetching data using yfnance
+    start_time = time.time()
     worksheet = workbook.add_worksheet(stock)
     stockIndex = stock
-    pre = datetime.strptime(start, '%Y-%m-%d') - relativedelta(months=2)
-    pre = pre.strftime('%Y-%m-%d')
     df = yf.Ticker(stockIndex).history(start = pre, end = end)
     df.index = df.index.tz_localize(None)
     cdf = df['Close']
 
     ### function of drawing plots
     def draw_pic(inp):
-        plt.figure(figsize=(12, 3))
-        plt.plot(inp['x_val'], inp['y_val'][0], label= 'close', marker='.',markersize= 3,c = 'k')
+        plt.figure(figsize=(12, 6))
+        plt.plot(inp['x_val'], inp['y_val'][0], label= 'close', marker='.',markersize= 1,c = 'k')
         plt.plot(inp['x_val'], inp['y_val'][1], label= '20SMA', marker='.',markersize= 0,c = 'orange')
         plt.title(f'{stockIndex} {inp['name']}') 
         plt.xlabel('Date')
@@ -52,7 +54,7 @@ for stock in stocks:
         plt.close()  
         worksheet.insert_image(inp['loc'], os.path.join('images', f'{stockIndex} {inp['name']}.png'))
     def draw_pic_tec(inp):
-        plt.figure(figsize=(12, 3))
+        plt.figure(figsize=(12, 6))
         plt.plot(inp['x_val'], inp['y_val'][0], label = inp['lab'][0], marker='.',markersize= 0,color = 'blue')
         plt.plot(inp['x_val'], inp['y_val'][1], label = inp['lab'][1], marker='.',markersize= 0,color = 'hotpink')
         plt.bar(inp['x_val'], inp['y_val'][2], label = inp['lab'][2],color = ['green' if value > 0 else 'red' for value in inp['y_val'][2]])
@@ -120,7 +122,7 @@ for stock in stocks:
         'y_val': [res['macd'], res['macdsignal'], res['macdhist']],
         'name' : 'MACD History',
         'ylabel': 'unit',
-        'loc': 'C16',
+        'loc': 'C31',
         'lab': ['DIF', 'MACD', 'OSC'],
     })
     draw_pic_tec({
@@ -128,7 +130,7 @@ for stock in stocks:
         'y_val': [res['slowk'], res['slowd'], res['slowk'] - res['slowd']],
         'name' : 'KD History',
         'ylabel': 'unit',
-        'loc': 'C31',
+        'loc': 'C61',
         'lab': ['K', 'D', 'K-D'],
     })
     draw_pic_tec({
@@ -136,7 +138,7 @@ for stock in stocks:
         'y_val': [res['rsif'], res['rsis'], res['rsif'] - res['rsis']],
         'name' : 'RSI History',
         'ylabel': 'unit',
-        'loc': 'C46',
+        'loc': 'C91',
         'lab': ['RSI(5)', 'RSI(10)', 'RSI(5)-RSI(10)'],
     })
     
@@ -149,15 +151,12 @@ for stock in stocks:
         rate_data = [rate]  
         hold = 1
         for i in range(1,len(dframe['Close'])):
+            if hold:
+                rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
             if dframe['Close'].iloc[i-1] <= dframe['Close'].iloc[i]:
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                else:
-                    hold = 1
+                hold = 1
             else: 
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                    hold = 0
+                hold = 0
             rate_data.append(rate)
         rate_data = pd.Series(rate_data,index = dframe.index, name = 'st1')
         return rate_data
@@ -166,15 +165,12 @@ for stock in stocks:
         rate_data = [rate]  
         hold = 1
         for i in range(1,len(dframe['Close'])):
+            if hold:
+                rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
             if dframe['Close'].iloc[i-1] <= dframe['Close'].iloc[i]:
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                    hold = 0
+                hold = 0
             else: 
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                else:
-                    hold = 1
+                hold = 1
             rate_data.append(rate)
         rate_data = pd.Series(rate_data,index = dframe.index, name = 'st2')
         return rate_data
@@ -183,15 +179,12 @@ for stock in stocks:
         rate_data = [rate]  
         hold = 1
         for i in range(1,len(dframe['Close'])):
+            if hold:
+                rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
             if dframe['Close'].iloc[i] >= dframe['sma'].iloc[i]:
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                else:
-                    hold = 1
+                hold = 1
             else: 
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                    hold = 0
+                hold = 0
             rate_data.append(rate)
         rate_data = pd.Series(rate_data,index = dframe.index, name = 'st_sma')
         return rate_data
@@ -200,15 +193,12 @@ for stock in stocks:
         rate_data = [rate]  
         hold = 1
         for i in range(1,len(dframe['Close'])):
+            if hold:
+                rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
             if dframe['macdhist'].iloc[i] >= 0:
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                else:
-                    hold = 1
+                hold = 1
             else: 
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                    hold = 0
+                hold = 0
             rate_data.append(rate)
         rate_data = pd.Series(rate_data,index = dframe.index, name = 'st_macd')
         return rate_data
@@ -217,15 +207,12 @@ for stock in stocks:
         rate_data = [rate]  
         hold = 1
         for i in range(1,len(dframe['Close'])):
+            if hold:
+                rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
             if dframe['slowk'].iloc[i] >= dframe['slowd'].iloc[i]:
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                else:
-                    hold = 1
+                hold = 1
             else: 
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                    hold = 0
+                hold = 0
             rate_data.append(rate)
         rate_data = pd.Series(rate_data,index = dframe.index, name = 'st_kd')
         return rate_data
@@ -234,15 +221,12 @@ for stock in stocks:
         rate_data = [rate]  
         hold = 1
         for i in range(1,len(dframe['Close'])):
+            if hold:
+                rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
             if dframe['rsif'].iloc[i] >= dframe['rsis'].iloc[i]:
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                else:
-                    hold = 1
+                hold = 1
             else: 
-                if hold:
-                    rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-                    hold = 0
+                hold = 0
             rate_data.append(rate)
         rate_data = pd.Series(rate_data,index = dframe.index, name = 'st_rsi')
         return rate_data
@@ -258,11 +242,14 @@ for stock in stocks:
         ],axis = 1)
 
     draw_pic_totval(totval)
-    print(f'{stock} is written in')
+    end_time = time.time()
+    print(f'{stock} is written in excel, runtime = {end_time - start_time}')
 
     ### opening the excel file
 workbook.close()
 os.system('start excel.exe "stock_data.xlsx"')
+total_end_time = time.time()
+print(f'total runtime : {total_end_time - total_start_time}')
 
 
 

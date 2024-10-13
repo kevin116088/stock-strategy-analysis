@@ -39,6 +39,8 @@ This python tool allows you to analyze different stock buying strategies and vis
 
 7.RSI: Buy when RSI(5) is higher than RSI(10), and vice versa.
 
+warning: trading tax has not been consider
+
 # input
 
 You can set three parameters to customize your analysis:
