@@ -10,8 +10,8 @@ This python tool allows you to analyze different stock buying strategies and vis
 
 # Outcome Preview
 
-    <img src="outcome1.png" alt="outcome1">
-    <img src="outcome12.png" alt="outcome2">
+![Outcome 1](./outcome1.png)
+![Outcome 2](./outcome2.png)
 
 # Technical Indicator Parameters
 
