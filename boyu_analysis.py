@@ -24,7 +24,7 @@ end = '2024-01-01'
 
 total_start_time = time.time()
 if not os.path.exists('images'):
-        os.makedirs('images')
+    os.makedirs('images')
 workbook = xlsxwriter.Workbook('stock_data.xlsx')
 pre = datetime.strptime(start, '%Y-%m-%d') - relativedelta(months=2)
 pre = pre.strftime('%Y-%m-%d')
