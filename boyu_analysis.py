@@ -13,9 +13,10 @@ import time
 
 ### input ##########
 
-stocks = ['^GSPC','AAPL','^SOX','TSLA']
-start = '2022-01-01'
-end = '2024-01-01'
+stocks = ['^GSPC', 'AAPL', 'TSLA']
+start = '2024-05-14'
+end = '2024-10-14'
+show_sma = False
 
 ####################
 
@@ -42,7 +43,9 @@ for stock in stocks:
     def draw_pic(inp):
         plt.figure(figsize=(12, 6))
         plt.plot(inp['x_val'], inp['y_val'][0], label= 'close', marker='.',markersize= 1,c = 'k')
-        plt.plot(inp['x_val'], inp['y_val'][1], label= '20SMA', marker='.',markersize= 0,c = 'orange')
+        if show_sma:
+            plt.plot(inp['x_val'], inp['y_val'][1], label= '5SMA', marker='.',markersize= 0,c = 'orange')
+            plt.plot(inp['x_val'], inp['y_val'][2], label= '20SMA', marker='.',markersize= 0,c = 'green')
         plt.title(f'{stockIndex} {inp['name']}') 
         plt.xlabel('Date')
         plt.ylabel(f'{inp['ylabel']}')
@@ -74,7 +77,7 @@ for stock in stocks:
         plt.plot(inp.index, inp['st0'], label= 'buy and hold', marker='.',markersize= 0,c = 'navy')
         plt.plot(inp.index, inp['st1'], label= 'st1', marker='.',markersize= 0,c = 'brown')
         plt.plot(inp.index, inp['st2'], label= 'st2', marker='.',markersize= 0,c = 'cyan')
-        plt.plot(inp.index, inp['st_sma'], label= 'sma', marker='.',markersize= 0,c = 'lime')
+        plt.plot(inp.index, inp['st_sma5'], label= 'sma5', marker='.',markersize= 0,c = 'lime')
         plt.plot(inp.index, inp['st_macd'], label= 'macd', marker='.',markersize= 0,c = 'gray')
         plt.plot(inp.index, inp['st_kd'], label= 'kd', marker='.',markersize= 0,c = 'orange')
         plt.plot(inp.index, inp['st_rsi'], label= 'rsi', marker='.',markersize= 0,c = 'magenta')
@@ -91,15 +94,17 @@ for stock in stocks:
 
     ### fetching technical indicator using talib and abstract
     df.rename(columns={'High': 'high', 'Low': 'low', 'Close': 'close'}, inplace=True)
-    sma_df = abstract.SMA(df, 20)
-    sma_df.name = 'sma'
+    sma20_df = abstract.SMA(df, 20)
+    sma20_df.name = 'sma20'
+    sma5_df = abstract.SMA(df, 5)
+    sma5_df.name = 'sma5'
     macd_df = abstract.MACD(df, fastperiod=12, slowperiod=26, signalperiod=9)
     kd_df = abstract.STOCH(df,fastk_period=9, slowk_period=5,slowd_period=5, slowk_matype=1, slowd_matype=1)
     rsif_df = abstract.RSI(df, 5)
     rsif_df.name = 'rsif'
     rsis_df = abstract.RSI(df, 10)
     rsis_df.name = 'rsis'
-    res = pd.concat([cdf, sma_df, macd_df, kd_df, rsif_df, rsis_df], axis=1)
+    res = pd.concat([cdf, sma20_df, sma5_df, macd_df, kd_df, rsif_df, rsis_df], axis=1)
     res = res.loc[res.index >= start]
 
     ### writing data into the excel file
@@ -112,7 +117,7 @@ for stock in stocks:
     ### drawing plots into the excel file
     draw_pic({
         'x_val': res.index,
-        'y_val': [res['Close'],res['sma']],
+        'y_val': [res['Close'],res['sma5'],res['sma20']],
         'name' : 'Closing Prices History',
         'ylabel': 'price',
         'loc': 'C1'
@@ -181,12 +186,12 @@ for stock in stocks:
         for i in range(1,len(dframe['Close'])):
             if hold:
                 rate = rate*dframe['Close'].iloc[i]/dframe['Close'].iloc[i-1]
-            if dframe['Close'].iloc[i] >= dframe['sma'].iloc[i]:
+            if dframe['Close'].iloc[i] >= dframe['sma5'].iloc[i]:
                 hold = 1
             else: 
                 hold = 0
             rate_data.append(rate)
-        rate_data = pd.Series(rate_data,index = dframe.index, name = 'st_sma')
+        rate_data = pd.Series(rate_data,index = dframe.index, name = 'st_sma5')
         return rate_data
     def strategy_macd(dframe):
         rate = 100
